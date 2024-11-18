@@ -237,29 +237,80 @@ void redo() {
     });
   }
 
-  void _arrangeNodes() {
-    const horizontalGap = 150.0;
-    const verticalGap = 100.0;
-    
-    var rootMembers = members.where((m) => m.parentId == null).toList();
-    for (var i = 0; i < rootMembers.length; i++) {
-      nodePositions[rootMembers[i].id] = Offset(
-        MediaQuery.of(context).size.width / 2,
-        100.0 + (i * verticalGap)
-      );
+void _arrangeNodes() {
+  const verticalGap = 200.0; // Increased from 150
+  const horizontalGap = 400.0; // Increased from 300
+  
+  // Group members by generation
+  Map<int, List<FamilyMember>> generationGroups = {};
+  for (var member in members) {
+    if (!generationGroups.containsKey(member.generation)) {
+      generationGroups[member.generation] = [];
     }
-    for (var member in members.where((m) => m.parentId != null)) {
-      var parent = members.firstWhere((m) => m.id == member.parentId);
-      var parentPos = nodePositions[parent.id]!;
-      var siblings = members.where((m) => m.parentId == parent.id).toList();
-      var index = siblings.indexOf(member);
+    generationGroups[member.generation]!.add(member);
+  }
+
+  // Calculate width needed for each generation
+  Map<int, double> generationWidths = {};
+  generationGroups.forEach((generation, membersInGen) {
+    // Calculate total width needed based on number of members and their children
+    double width = 0;
+    for (var member in membersInGen) {
+      // Add extra spacing for members with children
+      int numChildren = member.childrenIds.length;
+      width += max(numChildren * horizontalGap * 0.5, horizontalGap);
+    }
+    generationWidths[generation] = width;
+  });
+
+  // Position nodes
+  generationGroups.forEach((generation, membersInGeneration) {
+    double currentX = 10000 - (generationWidths[generation] ?? 0) / 2;
+    
+    for (var i = 0; i < membersInGeneration.length; i++) {
+      var member = membersInGeneration[i];
+      int numChildren = member.childrenIds.length;
+      
+      // Calculate spacing based on children
+      double spacing = max(numChildren * horizontalGap * 0.5, horizontalGap);
       
       nodePositions[member.id] = Offset(
-        parentPos.dx + horizontalGap,
-        parentPos.dy + (index - (siblings.length - 1) / 2) * verticalGap
+        currentX + spacing / 2,
+        10000 + (generation * verticalGap)
       );
+      
+      currentX += spacing;
     }
-  }
+  });
+}
+
+  void _centerTree() {
+  if (nodePositions.isEmpty) return;
+
+  final xPositions = nodePositions.values.map((pos) => pos.dx).toList();
+  final yPositions = nodePositions.values.map((pos) => pos.dy).toList();
+
+  final minX = xPositions.reduce((a, b) => a < b ? a : b);
+  final maxX = xPositions.reduce((a, b) => a > b ? a : b);
+  final minY = yPositions.reduce((a, b) => a < b ? a : b);
+  final maxY = yPositions.reduce((a, b) => a > b ? a : b);
+
+  final centerX = (minX + maxX) / 2;
+  final centerY = (minY + maxY) / 2;
+
+  final workspaceWidth = MediaQuery.of(context).size.width;
+  final workspaceHeight = MediaQuery.of(context).size.height;
+
+  final offsetX = workspaceWidth / 2 - centerX;
+  final offsetY = workspaceHeight / 2 - centerY;
+
+  setState(() {
+    nodePositions = nodePositions.map((key, value) {
+      return MapEntry(key, Offset(value.dx + offsetX, value.dy + offsetY));
+    });
+  });
+}
+
   Future<void> importFromJson() async {
   try {
     // Pick a JSON file
@@ -302,6 +353,8 @@ void redo() {
     );
   }
 }
+
+
   Future<void> exportToJson() async {
     try {
       final data = {
@@ -332,7 +385,7 @@ void redo() {
 
 @override
 Widget build(BuildContext context) {
-  return Scaffold(
+   return Scaffold(
     body: Stack(
       children: [
         InteractiveViewer(
@@ -341,12 +394,14 @@ Widget build(BuildContext context) {
           boundaryMargin: EdgeInsets.all(double.infinity),
           minScale: 0.01,
           maxScale: 5.0,
-          child: Container(
-            color: Colors.white,
-            child: SizedBox(
+          child: Center( // Add Center widget here
+            child: Container(
               width: 20000,
               height: 20000,
+              color: Colors.white,
               child: Stack(
+                // Add alignment to center the stack contents
+                alignment: Alignment.center,
                 children: [
                   CustomPaint(
                     size: Size(20000, 20000),
@@ -383,8 +438,8 @@ Widget build(BuildContext context) {
                               final RenderBox renderBox = context.findRenderObject() as RenderBox;
                               final localPosition = renderBox.globalToLocal(details.offset);
                               nodePositions[member.id] = Offset(
-                                max(0, localPosition.dx),
-                                max(0, localPosition.dy),
+                                10000 + (localPosition.dx - 10000), // Adjust for center
+                                10000 + (localPosition.dy - 10000), // Adjust for center
                               );
                             });
                           },
