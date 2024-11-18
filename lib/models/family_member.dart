@@ -1,47 +1,66 @@
-// class FamilyMember {
-//   final String id;
-//   final String name;
-//   String? parentId;
-//   List<String> childrenIds;
-//   int generation;
-
-//   FamilyMember({
-//     required this.id,
-//     required this.name,
-//     this.parentId,
-//     this.childrenIds = const [],
-//     this.generation = 0,
-//   });
-// }
-// In family_member.dart
 class FamilyMember {
-  final String id;
-  final String name;
+  String id;
+  String name;
   String? parentId;
-  List<String> childrenIds; // Remove const
+  List<String> childrenIds;
   int generation;
+
+  // New fields
+  DateTime? dateOfBirth;
+  DateTime? dateOfDeath;
+  String? imageUrl;
+  String? description;
 
   FamilyMember({
     required this.id,
     required this.name,
     this.parentId,
-    List<String>? childrenIds, // Make parameter optional
+    List<String>? childrenIds,
     this.generation = 0,
-  }) : childrenIds = childrenIds ?? []; // Initialize with empty mutable list
+    this.dateOfBirth,
+    this.dateOfDeath,
+    this.imageUrl,
+    this.description,
+  }) : childrenIds = childrenIds ?? [];
 
+  // Convert to JSON
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'name': name,
-    'parentId': parentId,
-    'childrenIds': childrenIds,
-    'generation': generation,
-  };
+        'id': id,
+        'name': name,
+        'parentId': parentId,
+        'childrenIds': childrenIds,
+        'generation': generation,
+        'dateOfBirth': dateOfBirth?.toIso8601String(),
+        'dateOfDeath': dateOfDeath?.toIso8601String(),
+        'imageUrl': imageUrl,
+        'description': description,
+      };
 
+  // Create from JSON
   factory FamilyMember.fromJson(Map<String, dynamic> json) => FamilyMember(
-    id: json['id'],
-    name: json['name'],
-    parentId: json['parentId'],
-    childrenIds: List<String>.from(json['childrenIds']),
-    generation: json['generation'],
-  );
+        id: json['id'],
+        name: json['name'],
+        parentId: json['parentId'],
+        childrenIds: List<String>.from(json['childrenIds']),
+        generation: json['generation'],
+        dateOfBirth: json['dateOfBirth'] != null ? DateTime.parse(json['dateOfBirth']) : null,
+        dateOfDeath: json['dateOfDeath'] != null ? DateTime.parse(json['dateOfDeath']) : null,
+        imageUrl: json['imageUrl'],
+        description: json['description'],
+      );
+
+  // Clone method
+  FamilyMember clone() {
+    return FamilyMember(
+      id: id,
+      name: name,
+      parentId: parentId,
+      childrenIds: List<String>.from(childrenIds),
+      generation: generation,
+      dateOfBirth: dateOfBirth,
+      dateOfDeath: dateOfDeath,
+      imageUrl: imageUrl,
+      description: description,
+    );
+  }
 }

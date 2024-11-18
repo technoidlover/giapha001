@@ -1,23 +1,27 @@
 import 'package:flutter/material.dart';
 import '../models/family_member.dart';
 
-class FamilyTreeNode extends StatelessWidget {
+class FamilyTreeNode extends StatefulWidget {
   final FamilyMember member;
   final VoidCallback onAddChild;
-  final double nodeWidth = 120.0;
-  final double nodeHeight = 60.0;
 
   const FamilyTreeNode({
-    super.key,
+    Key? key,
     required this.member,
     required this.onAddChild,
-  });
+  }) : super(key: key);
+
+  @override
+  State<FamilyTreeNode> createState() => _FamilyTreeNodeState();
+}
+
+class _FamilyTreeNodeState extends State<FamilyTreeNode> {
+  bool _isExpanded = false;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: nodeWidth,
-      height: nodeHeight,
+      width: 120.0,
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border.all(color: Colors.black),
@@ -30,26 +34,49 @@ class FamilyTreeNode extends StatelessWidget {
         ],
       ),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Expanded(
-            child: Center(
+          GestureDetector(
+            onTap: () => setState(() => _isExpanded = !_isExpanded),
+            child: Container(
+              padding: EdgeInsets.all(8),
               child: Text(
-                member.name,
+                widget.member.name,
                 textAlign: TextAlign.center,
-                overflow: TextOverflow.ellipsis,
               ),
             ),
           ),
+          if (_isExpanded) ...[
+            Divider(height: 1),
+            Padding(
+              padding: EdgeInsets.all(8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (widget.member.dateOfBirth != null)
+                    Text('Born: ${widget.member.dateOfBirth!.year}'),
+                  if (widget.member.dateOfDeath != null)
+                    Text('Died: ${widget.member.dateOfDeath!.year}'),
+                  if (widget.member.description != null)
+                    Text(
+                      widget.member.description!,
+                      style: TextStyle(fontSize: 12),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                ],
+              ),
+            ),
+          ],
           GestureDetector(
             behavior: HitTestBehavior.opaque,
-            onTap: onAddChild,
+            onTap: widget.onAddChild,
             child: Container(
               height: 24,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 border: Border(top: BorderSide(color: Colors.black12)),
               ),
-              child: const Icon(Icons.add, size: 20),
+              child: Icon(Icons.add, size: 20),
             ),
           ),
         ],
