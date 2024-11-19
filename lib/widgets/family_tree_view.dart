@@ -242,9 +242,9 @@ void redo() {
   }
 
 void _arrangeNodes() {
-  const verticalGap = 200.0; // Increased from 150
-  const horizontalGap = 400.0; // Increased from 300
-  
+  const verticalGap = 200.0;
+  const horizontalGap = 200.0;
+
   // Group members by generation
   Map<int, List<FamilyMember>> generationGroups = {};
   for (var member in members) {
@@ -254,36 +254,31 @@ void _arrangeNodes() {
     generationGroups[member.generation]!.add(member);
   }
 
-  // Calculate width needed for each generation
-  Map<int, double> generationWidths = {};
+  // Sort each generation group by parent-child relationship
   generationGroups.forEach((generation, membersInGen) {
-    // Calculate total width needed based on number of members and their children
-    double width = 0;
-    for (var member in membersInGen) {
-      // Add extra spacing for members with children
-      int numChildren = member.childrenIds.length;
-      width += max(numChildren * horizontalGap * 0.5, horizontalGap);
-    }
-    generationWidths[generation] = width;
+    membersInGen.sort((a, b) {
+      if (a.parentId == null && b.parentId == null) {
+        return 0;
+      } else if (a.parentId == null) {
+        return -1;
+      } else if (b.parentId == null) {
+        return 1;
+      } else {
+        return a.parentId!.compareTo(b.parentId!);
+      }
+    });
   });
 
   // Position nodes
+  double startX = 10000;
   generationGroups.forEach((generation, membersInGeneration) {
-    double currentX = 10000 - (generationWidths[generation] ?? 0) / 2;
-    
-    for (var i = 0; i < membersInGeneration.length; i++) {
-      var member = membersInGeneration[i];
-      int numChildren = member.childrenIds.length;
-      
-      // Calculate spacing based on children
-      double spacing = max(numChildren * horizontalGap * 0.5, horizontalGap);
-      
-      nodePositions[member.id] = Offset(
-        currentX + spacing / 2,
-        10000 + (generation * verticalGap)
-      );
-      
-      currentX += spacing;
+    double currentY = 10000 + (generation * verticalGap);
+    double totalWidth = (membersInGeneration.length - 1) * horizontalGap;
+    double currentX = startX - totalWidth / 2;
+
+    for (var member in membersInGeneration) {
+      nodePositions[member.id] = Offset(currentX, currentY);
+      currentX += horizontalGap;
     }
   });
 }
@@ -402,6 +397,16 @@ Widget build(BuildContext context) {
    return Scaffold(
     body: Stack(
       children: [
+        //add background image link
+        Container (
+          decoration: BoxDecoration(
+            image: DecorationImage(
+              image: NetworkImage('https://cdn2.fptshop.com.vn/unsafe/hinh_nen_rong_vang_3d_2_a1fee7d7c6.jpg'),
+              fit: BoxFit.cover,
+            ),
+          ),
+        ),
+        
         InteractiveViewer(
           transformationController: _transformationController,
           constrained: false,
