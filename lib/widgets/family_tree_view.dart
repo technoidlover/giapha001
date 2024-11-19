@@ -75,6 +75,10 @@ void redo() {
       }
       _arrangeNodes();
       _saveState();
+        // Zoom to the newly added member
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _zoomToMember(newMember);
+    });
     });
   }
   void _deleteAllMembers() {
@@ -354,6 +358,16 @@ void _arrangeNodes() {
   }
 }
 
+  void _zoomToMember(FamilyMember member) {
+  final position = nodePositions[member.id];
+  if (position != null) {
+    final scale = 1.0; // Adjust the scale as needed
+    final matrix = Matrix4.identity()
+      ..translate(-position.dx + MediaQuery.of(context).size.width / 2, -position.dy + MediaQuery.of(context).size.height / 2)
+      ..scale(scale);
+    _transformationController.value = matrix;
+  }
+}
 
   Future<void> exportToJson() async {
     try {
